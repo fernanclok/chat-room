@@ -1,181 +1,178 @@
 ---
 import Header from "../components/header.astro";
 import Layout from "../layouts/Layout.astro";
+import Sidebar from "../components/sidebar.astro";
 ---
 
 <Layout title="EnteraChat">
-  <Header />
-  <html>
-    <head>
-      <title>Chat</title>
-      <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
-    </head>
-    <body>
-      <div class="chat-container">
-        <div id="chat"><!-- Aquí se agregarán los mensajes --></div>
+  <Sidebar />
+  <div class="content-container">
+    <Header />
 
-        <!-- Formulario Tailwind -->
-        <form
-          id="messageForm"
-          class="flex items-center px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700"
+    <div class="chat-container">
+      <div id="chat"></div>
+      
+      <form
+        id="messageForm"
+        class="flex items-center px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700"
+      >
+        <input
+          type="text"
+          id="usernameInput"
+          placeholder="Your username..."
+        />
+
+        <input
+          id="messageInput"
+          type="text"
+          class="block mx-4 p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          placeholder="Your message..."></input>
+
+        <button
+          type="submit"
+          class="inline-flex justify-center p-2 text-blue-600 rounded-full cursor-pointer hover:bg-blue-100 dark:text-blue-500 dark:hover:bg-gray-600"
         >
-          <!-- Input del username -->
-          <input
-            type="text"
-            id="usernameInput"
-            class="...estilos..."
-            placeholder="Your username..."
-          />
-
-          <!-- Input del mensaje -->
-          <input
-            id="messageInput"
-            type="text"
-            class="block mx-4 p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            placeholder="Your message..."></input>
-
-          <!-- Botón de enviar -->
-          <button
-            type="submit"
-            class="inline-flex justify-center p-2 text-blue-600 rounded-full cursor-pointer hover:bg-blue-100 dark:text-blue-500 dark:hover:bg-gray-600"
+          <svg
+            class="w-5 h-5 rotate-90"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="currentColor"
+            viewBox="0 0 18 20"
           >
-            <svg
-              class="w-5 h-5 rotate-90"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 18 20"
-            >
-              <path
-                d="m17.914 18.594-8-18a1 1 0 0 0-1.828 0l-8 18a1 1 0 0 0 1.157 1.376L8 18.281V9a1 1 0 0 1 2 0v9.281l6.758 1.689a1 1 0 0 0 1.156-1.376Z"
-              ></path>
-            </svg>
-            <span class="sr-only">Send message</span>
-          </button>
-        </form>
-      </div>
+            <path
+              d="m17.914 18.594-8-18a1 1 0 0 0-1.828 0l-8 18a1 1 0 0 0 1.157 1.376L8 18.281V9a1 1 0 0 1 2 0v9.281l6.758 1.689a1 1 0 0 0 1.156-1.376Z"
+            ></path>
+          </svg>
+          <span class="sr-only">Send message</span>
+        </button>
+      </form>
+    </div>
 
-      <script>
-        window.onload = function () {
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 
-          var pusher = new Pusher("42fa1eeca3cc6e236c3c", { cluster: "us3" });
-          var channel = pusher.subscribe("chat");
+    <script>
+      window.onload = function () {
 
-          channel.bind("message", function (data) {
-  var chatDiv = document.getElementById("chat");
-  var oldChat = chatDiv.innerHTML; // Guardar todo el contenido del chat
-  chatDiv.innerHTML = ""; // Limpiar chatDiv
+        var pusher = new Pusher("42fa1eeca3cc6e236c3c", { cluster: "us3" });
+        var channel = pusher.subscribe("chat");
 
-  var username = document.getElementById("usernameInput").value; // Obtener el nombre de usuario del input
-  var usernameElement = document.createElement("span"); // Nuevo elemento para el nombre de usuario
-  usernameElement.innerText = data.username + ": "; // Añadir el nombre del usuario + ':'
-  usernameElement.className =
-    data.username === username ? "username-me" : "username-them"; // Aplicar estilos de nombre de usuario
-  
-  var messageElement = document.createElement("p");
-  // Agrega una clase basada en si este mensaje es del usuario
-  messageElement.className =
-    data.username === username ? "me" : "them";
-  
-  messageElement.appendChild(document.createTextNode(data.message)); // Solo establece texto de esta manera para evitar el código HTML en el chat
-  messageElement.insertAdjacentElement('afterbegin', usernameElement); // Insertar nombre de usuario en el elemento del mensaje
-  
-  chatDiv.appendChild(messageElement); // Agregar el nuevo mensaje al principio
-  chatDiv.innerHTML += oldChat; // Agregar el contenido anterior después del nuevo mensaje
+        channel.bind("message", function (data) {
+var chatDiv = document.getElementById("chat");
+var oldChat = chatDiv.innerHTML; // Guardar todo el contenido del chat
+chatDiv.innerHTML = ""; // Limpiar chatDiv
 
-  chatDiv.scrollTop = chatDiv.scrollHeight; // Siempre mostrar la parte inferior del chat
+var username = document.getElementById("usernameInput").value; // Obtener el nombre de usuario del input
+var usernameElement = document.createElement("span"); // Nuevo elemento para el nombre de usuario
+usernameElement.innerText = data.username + ": "; // Añadir el nombre del usuario + ':'
+usernameElement.className =
+  data.username === username ? "username-me" : "username-them"; // Aplicar estilos de nombre de usuario
+
+var messageElement = document.createElement("p");
+// Agrega una clase basada en si este mensaje es del usuario
+messageElement.className =
+  data.username === username ? "me" : "them";
+
+messageElement.appendChild(document.createTextNode(data.message)); // Solo establece texto de esta manera para evitar el código HTML en el chat
+messageElement.insertAdjacentElement('afterbegin', usernameElement); // Insertar nombre de usuario en el elemento del mensaje
+
+chatDiv.appendChild(messageElement); // Agregar el nuevo mensaje al principio
+chatDiv.innerHTML += oldChat; // Agregar el contenido anterior después del nuevo mensaje
+
+chatDiv.scrollTop = chatDiv.scrollHeight; // Siempre mostrar la parte inferior del chat
 });
+
+        var form = document.getElementById("messageForm");
+
+        form.onsubmit = function (e) {
+          e.preventDefault();
+          var usernameInput = document.getElementById("usernameInput");
+          var messageInput = document.getElementById("messageInput");
 
           var form = document.getElementById("messageForm");
 
-          form.onsubmit = function (e) {
-            e.preventDefault();
-            var usernameInput = document.getElementById("usernameInput");
-            var messageInput = document.getElementById("messageInput");
+          fetch("http://192.168.35.16:8000/api/messages", {
+  method: "POST",
+  body: JSON.stringify({
+    username: usernameInput.value,
+    message: messageInput.value,
+  }),
+  headers: {
+    "Content-Type": "application/json",
+  },
+})
+  .then((response) => {
+    if (!response.ok) {
+      console.log(
+        "Looks like there was a problem. Status Code: " + response.status
+      );
+      throw Error(response.statusText);
+    }
+    // Aquí maneja la respuesta exitosa si es necesario
+    // Por ejemplo, puedes realizar alguna acción o actualizar la interfaz de usuario
+    // Esto se ejecutará si la respuesta es "ok"
+    return response.json(); // Si la respuesta contiene JSON, puedes parsearla aquí
+  })
+  .catch((error) => {
+    console.error("Error:", error);
+  });
 
-            var form = document.getElementById("messageForm");
-
-            // Enviar el mensaje al servidor
-            fetch("http://localhost:8000/api/messages", {
-              method: "POST",
-              body: JSON.stringify({
-                username: usernameInput.value,
-                message: messageInput.value,
-              }),
-              headers: {
-                "Content-Type": "application/json",
-              },
-            })
-              .then((response) => {
-                if (!response.ok) {
-                  console.log(
-                    "Looks like there was a problem. Status Code: " +
-                      response.status
-                  );
-                  throw Error(response.statusText);
-                }
-              })
-              .catch((error) => {
-                console.error("Error:", error);
-              });
-
-            // Limpia el campo del mensaje para que el usuario pueda escribir un nuevo mensaje
-            messageInput.value = "";
-          };
+          // Limpia el campo del mensaje para que el usuario pueda escribir un nuevo mensaje
+          messageInput.value = "";
         };
-      </script>
-    </body>
-  </html>
+      };
+    </script>
+  </div>
 </Layout>
 
 <style>
- .chat-container {
-  display: flex;
-  flex-direction: column;
-  height: 69vh;
+.chat-container {
+ display: flex;
+ flex-direction: column;
+ height: 69vh;
+ margin-left: 250px;
 }
 
 #chat {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column-reverse;
-  overflow-y: auto; 
-  height: 85vh;
+ flex-grow: 1;
+ display: flex;
+ flex-direction: column-reverse;
+ overflow-y: auto; 
+ height: 85vh;
 }
-    
+  
 #messageForm {
-  width: 100%;
-  height: 15vh;
+ width: 100%;
+ height: 15vh;
 }
 
 #chat p {
-  width: 70%;
-  margin: 10px;
-  padding: 5px;
-  border-radius: 5px;
+ width: 70%;
+ margin: 10px;
+ padding: 5px;
+ border-radius: 5px;
 }
 
 #chat .me {
-  margin-left: auto;
-  background-color: #4861d1; 
-  color: #ffffff;
+ margin-left: auto;
+ background-color: #4861d1; 
+ color: #ffffff;
 }
 
 #chat .them {
-  margin-right: auto;
-  background-color: #1461aa;
-  color: #ffffff;
+ margin-right: auto;
+ background-color: #2e7fca;
+ color: #ffffff;
 }
 
 #chat .username-me {
-	margin-left: auto;
-  color: #ffffff;
-  font-weight: bold;
+ margin-left: auto;
+ color: #ffffff;
+ font-weight: bold;
 }
-    
+  
 #chat .username-them {
-	margin-right: auto;
-  color: #ffffff;
-  font-weight: bold; 
+ margin-right: auto;
+ color: #ffffff;
+ font-weight: bold; 
 }
 </style>
