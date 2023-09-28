@@ -76,30 +76,29 @@ const { title } = Astro.props;
   border-radius: 5px;
 }
 
-#chat .me {
-  margin-left: auto;
-  background-color: #4861d1; 
-  color: #ffffff;
+  /* Estilo para mensajes del usuario actual (derecha) */
+  #chat .me {
+    margin-left: auto;
+    background-color: #4861d1;
+    color: #ffffff;
+    text-align: right; /* Alinea el texto a la derecha */
+  }
+
+  /* Estilo para mensajes de otros usuarios (izquierda) */
+  #chat .them {
+    margin-right: auto;
+    background-color: #67acec;
+    color: #ffffff;
+    text-align: left; /* Alinea el texto a la izquierda */
+  }
+
+  .form-full-width {
+  width: 100%;
 }
 
-#chat .them {
-  margin-right: auto;
-  background-color: #1461aa;
-  color: #ffffff;
-}
-
-#chat .username-me {
-	margin-left: auto;
-	background-color: #4861d1; 
-  color: #ffffff;
-  font-weight: bold;
-}
-    
-#chat .username-them {
-	margin-right: auto;
-	background-color: #1461aa;
-  color: #ffffff;
-  font-weight: bold; 
+/* Establece el ancho del formulario cuando el sidebar esté visible */
+.sidebar-visible .form-full-width {
+  width: auto;
 }
 
 </style>

@@ -1,0 +1,263 @@
+---
+import Header from "../components/header.astro";
+import Layout from "../layouts/Layout.astro";
+import Sidebar from "../components/sidebar.astro";
+---
+
+<Layout title="EnteraChat">
+  <Sidebar />
+  <div class="content-container">
+    <Header />
+
+    <div class="chat-container chat-container-with-margin">
+
+      <!-- aqui se mustran los mensajes del chat -->
+      <div id="chat"></div>
+
+      <form
+        id="messageForm"
+        class="flex items-center px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 form-full-width"
+      >
+        <input
+          id="messageInput"
+          type="text"
+          class="block mx-4 p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          placeholder="Your message..."
+        />
+
+        <button
+          type="submit"
+          class="inline-flex justify-center p-2 text-blue-600 rounded-lg cursor-pointer hover:bg-blue-100 dark:text-blue-500 dark:hover:bg-gray-600"
+        >
+          <svg
+            class="w-5 h-5 rotate-90"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="currentColor"
+            viewBox="0 0 18 20"
+          >
+            <path
+              d="m17.914 18.594-8-18a1 1 0 0 0-1.828 0l-8 18a1 1 0 0 0 1.157 1.376L8 18.281V9a1 1 0 0 1 2 0v9.281l6.758 1.689a1 1 0 0 0 1.156-1.376Z"
+            ></path>
+          </svg>
+          <span class="sr-only">Send message</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="http://192.168.35.16:8000/socket.io/socket.io.js" is:inline
+  ></script>
+
+  <script>
+    // Función para obtener el valor de una cookie por su nombre
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(";").shift();
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      // obtener el user_id del usuario actual
+      const user_id = parseInt(getCookie("user_id"));
+
+      if (!user_id) {
+        console.error("user_id no disponible");
+        return;
+      }
+
+      // Conectar al servidor de Socket.io
+      window.socket = io("http://192.168.35.16:8000"); 
+
+      window.socket.on("connect", () => {
+        console.log("Conectado al servidor de Socket.io");
+      });
+
+      window.socket.on("disconnect", () => {
+        console.log("Desconectado del servidor de Socket.io");
+      });
+
+      window.socket.on("message", (message) => {
+        console.log("Mensaje recibido:", message);
+
+        const chatContainer = document.getElementById("chat");
+        const messageElement = document.createElement("p");
+        messageElement.textContent = message.message;
+
+        if (user_id == message.user_id) {
+          messageElement.classList.add("me");
+        } else {
+          messageElement.classList.add("them");
+        }
+
+        chatContainer.appendChild(messageElement);
+        chatContainer.scrollTop = chatContainer.scrollHeight; // Desplazar hacia abajo para mostrar el último mensaje
+      });
+      // Función para cargar y mostrar mensajes según la conversación seleccionada
+      async function loadAndDisplayMessages(roomId) {
+        // Obtén el contenedor de chat
+        const chatContainer = document.getElementById("chat");
+
+        // Haz una solicitud al servidor para obtener mensajes de la conversación
+        const apiUrl = `http://192.168.35.16:8000/api/message/getAll/room/${roomId}`;
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        console.log(data);
+
+        // Limpiar el contenido actual del contenedor de chat
+        chatContainer.innerHTML = "";
+
+        // Obtén el ID del usuario actual (esto debe estar definido previamente)
+        const currentUserID = user_id; // Reemplaza 'mi_id' con el ID de tu usuario
+        console.log("usuario actual:", currentUserID);
+
+        // Itera sobre los mensajes en orden inverso (desde el más nuevo hasta el más antiguo)
+        for (let i = data.length - 1; i >= 0; i--) {
+          const message = data[i];
+
+          const messageElement = document.createElement("p");
+          messageElement.textContent = message.message;
+
+          console.log("user del message", message.user_id);
+
+          // Agrega clases CSS condicionales según el autor del mensaje
+          if (currentUserID == message.user_id) {
+            messageElement.classList.add("me"); // Mensaje del usuario actual (derecha)
+          } else {
+            messageElement.classList.add("them"); // Mensaje de otros usuarios (izquierda)
+          }
+
+          console.log(message.message);
+
+          // Agrega el mensaje al final del contenedor
+          chatContainer.appendChild(messageElement);
+        }
+      }
+
+      // Agrega un evento de clic a los enlaces de conversación en el sidebar
+      document.addEventListener("click", (event) => {
+        if (event.target && event.target.getAttribute("data-room-id")) {
+          const roomId = event.target.getAttribute("data-room-id");
+          loadAndDisplayMessages(roomId);
+        }
+      });
+
+      // // Escuchar mensajes en tiempo real a través de Socket.io
+      // socket.on("message", (message) => {
+      //   const chatContainer = document.getElementById("chat");
+      //   const messageElement = document.createElement("p");
+      //   messageElement.textContent = message.message;
+      //   console.log("mensaje del socket", message.message);
+
+      //   if (user_id == message.user_id) {
+      //     messageElement.classList.add("me");
+      //   } else {
+      //     messageElement.classList.add("them");
+      //   }
+
+      //   chatContainer.appendChild(messageElement);
+      // });
+
+      // Manejar el envío de mensajes desde el formulario
+      document
+        .getElementById("messageForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const messageInput = document.getElementById("messageInput");
+          const message = messageInput.value;
+
+          // Obtén el room_id como cadena desde la variable global
+          const room_id_string = window.selectedRoomId;
+
+          // Convierte la cadena a un entero
+          const room_id = parseInt(room_id_string);
+
+          if (!room_id) {
+            console.error("room_id no disponible");
+            return;
+          }
+
+          // Crea el objeto de mensaje sin valores nulos
+          const messageData = {
+            user_id,
+            room_id,
+            message,
+            timestamp: new Date().toISOString(),
+            message_type_id: 1, // Puedes ajustar el tipo de mensaje según tu lógica
+            url: null, // Puedes proporcionar una URL si es necesario
+          };
+
+          // Enviar el mensaje al servidor a través de Socket.io
+          var emitter = socket.emit("chat message", messageData);
+          console.log("emitter", emitter);
+
+          messageInput.value = ""; // Limpia el campo de entrada
+        });
+    });
+  </script>
+
+  <style>
+    /* Estilo base para .chat-container */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 69vh;
+      margin-left: 0; /* Inicialmente, sin margen izquierdo */
+      transition: margin-left 0.3s ease; /* Agrega una transición suave para el margen izquierdo */
+    }
+
+    /* Aplica el margen izquierdo solo cuando el sidebar esté abierto */
+    .chat-container.chat-container-with-margin {
+      margin-left: 250px;
+    }
+
+    #chat {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column-reverse;
+      overflow-y: auto;
+      height: 85vh;
+      width: 100%;
+    }
+
+    #messageForm {
+      width: auto;
+      height: 15vh;
+    }
+
+    #chat p {
+      width: 70%;
+      margin: 10px;
+      padding: 5px;
+      border-radius: 5px;
+    }
+
+    /* Estilo para mensajes del usuario actual (derecha) */
+    #chat .me {
+      margin-left: auto;
+      background-color: #4861d1;
+      color: #ffffff;
+      text-align: right; /* Alinea el texto a la derecha */
+    }
+
+    /* Estilo para mensajes de otros usuarios (izquierda) */
+    #chat .them {
+      margin-right: auto;
+      background-color: #67acec;
+      color: #ffffff;
+      text-align: left; /* Alinea el texto a la izquierda */
+    }
+
+    #chat .username-me {
+      margin-left: auto;
+      color: #ffffff;
+      font-weight: bold;
+    }
+
+    #chat .username-them {
+      margin-right: auto;
+      color: #ffffff;
+      font-weight: bold;
+    }
+  </style>
+</Layout>
