@@ -5,12 +5,11 @@ import Sidebar from "../components/sidebar.astro";
 ---
 
 <Layout title="EnteraChat">
-  <Sidebar />
+  <!-- <Sidebar /> -->
   <div class="content-container">
     <Header />
 
     <div class="chat-container chat-container-with-margin">
-
       <!-- aqui se mustran los mensajes del chat -->
       <div id="chat"></div>
 
@@ -67,32 +66,20 @@ import Sidebar from "../components/sidebar.astro";
       }
 
       // Conectar al servidor de Socket.io
-      window.socket = io("http://192.168.35.16:8000"); 
+      window.socket = io("http://192.168.35.16:8000");
 
-      window.socket.on("connect", () => {
-        console.log("Conectado al servidor de Socket.io");
-      });
+      window.socket.on("connect", () => {});
 
-      window.socket.on("disconnect", () => {
-        console.log("Desconectado del servidor de Socket.io");
-      });
+      window.socket.on("disconnect", () => {});
 
-      window.socket.on("message", (message) => {
-        console.log("Mensaje recibido:", message);
-
+      window.socket.on("chat message", (message) => {
         const chatContainer = document.getElementById("chat");
         const messageElement = document.createElement("p");
         messageElement.textContent = message.message;
-
-        if (user_id == message.user_id) {
-          messageElement.classList.add("me");
-        } else {
-          messageElement.classList.add("them");
-        }
-
         chatContainer.appendChild(messageElement);
         chatContainer.scrollTop = chatContainer.scrollHeight; // Desplazar hacia abajo para mostrar el último mensaje
       });
+
       // Función para cargar y mostrar mensajes según la conversación seleccionada
       async function loadAndDisplayMessages(roomId) {
         // Obtén el contenedor de chat
@@ -102,63 +89,67 @@ import Sidebar from "../components/sidebar.astro";
         const apiUrl = `http://192.168.35.16:8000/api/message/getAll/room/${roomId}`;
         const response = await fetch(apiUrl);
         const data = await response.json();
-        console.log(data);
 
         // Limpiar el contenido actual del contenedor de chat
         chatContainer.innerHTML = "";
 
         // Obtén el ID del usuario actual (esto debe estar definido previamente)
         const currentUserID = user_id; // Reemplaza 'mi_id' con el ID de tu usuario
-        console.log("usuario actual:", currentUserID);
 
         // Itera sobre los mensajes en orden inverso (desde el más nuevo hasta el más antiguo)
         for (let i = data.length - 1; i >= 0; i--) {
           const message = data[i];
 
-          const messageElement = document.createElement("p");
-          messageElement.textContent = message.message;
+          const messageElement = document.createElement("div");
+          messageElement.classList.add("message");
 
-          console.log("user del message", message.user_id);
+          // Crear un elemento para el nombre de usuario
+          const usernameElement = document.createElement("div");
+          usernameElement.textContent = message.username;
+          usernameElement.classList.add("username");
 
-          // Agrega clases CSS condicionales según el autor del mensaje
+          // Crear un elemento para el mensaje
+          const messageContentElement = document.createElement("div");
+          messageContentElement.textContent = message.message;
+
+          // Agregar clases CSS condicionales según el autor del mensaje
           if (currentUserID == message.user_id) {
-            messageElement.classList.add("me"); // Mensaje del usuario actual (derecha)
+            messageContentElement.classList.add("message-content-me");
           } else {
-            messageElement.classList.add("them"); // Mensaje de otros usuarios (izquierda)
+            messageContentElement.classList.add("message-content-them");
           }
 
-          console.log(message.message);
+          messageElement.appendChild(usernameElement);
+          messageElement.appendChild(messageContentElement);
 
-          // Agrega el mensaje al final del contenedor
+          if (currentUserID == message.user_id) {
+            messageElement.classList.add("me");
+          } else {
+            messageElement.classList.add("them");
+          }
+
           chatContainer.appendChild(messageElement);
         }
       }
+
+      socket.on("update messages", (messages) => {
+        updateMessages(messages);
+      });
 
       // Agrega un evento de clic a los enlaces de conversación en el sidebar
       document.addEventListener("click", (event) => {
         if (event.target && event.target.getAttribute("data-room-id")) {
           const roomId = event.target.getAttribute("data-room-id");
+
+          socket.emit("join room", roomId);
+
+          const currentRoomId = roomId;
+
           loadAndDisplayMessages(roomId);
         }
       });
 
-      // // Escuchar mensajes en tiempo real a través de Socket.io
-      // socket.on("message", (message) => {
-      //   const chatContainer = document.getElementById("chat");
-      //   const messageElement = document.createElement("p");
-      //   messageElement.textContent = message.message;
-      //   console.log("mensaje del socket", message.message);
-
-      //   if (user_id == message.user_id) {
-      //     messageElement.classList.add("me");
-      //   } else {
-      //     messageElement.classList.add("them");
-      //   }
-
-      //   chatContainer.appendChild(messageElement);
-      // });
-
-      // Manejar el envío de mensajes desde el formulario
+      // Después de enviar un mensaje, no necesitas recargar los mensajes
       document
         .getElementById("messageForm")
         .addEventListener("submit", async (e) => {
@@ -188,8 +179,10 @@ import Sidebar from "../components/sidebar.astro";
           };
 
           // Enviar el mensaje al servidor a través de Socket.io
-          var emitter = socket.emit("chat message", messageData);
-          console.log("emitter", emitter);
+          socket.emit("chat message", messageData);
+
+          //cargar el nuevo mensaje a todos los miembros de la sala
+          Socket.emit("update messages", room_id);
 
           messageInput.value = ""; // Limpia el campo de entrada
         });
@@ -230,34 +223,6 @@ import Sidebar from "../components/sidebar.astro";
       margin: 10px;
       padding: 5px;
       border-radius: 5px;
-    }
-
-    /* Estilo para mensajes del usuario actual (derecha) */
-    #chat .me {
-      margin-left: auto;
-      background-color: #4861d1;
-      color: #ffffff;
-      text-align: right; /* Alinea el texto a la derecha */
-    }
-
-    /* Estilo para mensajes de otros usuarios (izquierda) */
-    #chat .them {
-      margin-right: auto;
-      background-color: #67acec;
-      color: #ffffff;
-      text-align: left; /* Alinea el texto a la izquierda */
-    }
-
-    #chat .username-me {
-      margin-left: auto;
-      color: #ffffff;
-      font-weight: bold;
-    }
-
-    #chat .username-them {
-      margin-right: auto;
-      color: #ffffff;
-      font-weight: bold;
     }
   </style>
 </Layout>

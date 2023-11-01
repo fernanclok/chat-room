@@ -1,48 +1,76 @@
 ---
-
+import CreateChatModal from "./createChatModal.astro";
 ---
-<button data-drawer-target="default-sidebar" data-drawer-toggle="default-sidebar" aria-controls="default-sidebar" type="button" class="inline-flex items-center p-2 mt-2 ml-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
-    <span class="sr-only">Open sidebar</span>
-    <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-       <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
-    </svg>
- </button>
- 
- <aside id="default-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0" aria-label="Sidebar">
-    <div class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
-      <span class="ml-2 text-2xl font-medium font-extrabold">Chats</span><button class="ml-2 text-1xl font-medium font-extrabold text-right bg-gray-700 rounded-3xl">New</button>
-      <ul class="space-y-2 font-medium" id="room-list">
-         <!-- Los cuartos se agregarán aquí -->
-       </ul>
-       
-       <script>
-         // Función para obtener el valor de una cookie por su nombre
-function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
-}
-         document.addEventListener('DOMContentLoaded', async () => {
-          // Obtén el user_id de la cookie
-  const user_id = getCookie('user_id');
-                    if (!user_id) {
-                        // Maneja la situación en la que el user_id no está disponible
-                        console.error('user_id no disponible');
-                        return;
-                    }
+<button
+  data-drawer-target="default-sidebar"
+  data-drawer-toggle="default-sidebar"
+  aria-controls="default-sidebar"
+  type="button"
+  class="inline-flex items-center p-2 mt-2 ml-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+>
+  <span class="sr-only">Open sidebar</span>
+  <svg
+    class="w-6 h-6"
+    aria-hidden="true"
+    fill="currentColor"
+    viewBox="0 0 20 20"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      clip-rule="evenodd"
+      fill-rule="evenodd"
+      d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"
+    ></path>
+  </svg>
+</button>
 
-                    // Usa el user_id en la URL de la API
-                    const apiUrl = `http://192.168.35.16:8000/api/roomUser/getAll/${user_id}`;
-                    
-                    const response = await fetch(apiUrl);
-                    const data = await response.json();
-           const roomList = document.querySelector("#room-list"); // Encuentra el elemento HTML donde deseas agregar las habitaciones
-       
-           data.forEach((room) => {
-             // Crea un elemento de lista <li> para cada habitación
-             const listItem = document.createElement("li");
-             listItem.innerHTML = `
-             <a
+<aside
+  id="default-sidebar"
+  class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0"
+  aria-label="Sidebar"
+>
+  <div class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
+    <span class="ml-2 text-2xl font-medium font-extrabold">Chats</span>
+    <button
+      data-modal-target="newchat-modal"
+      data-modal-toggle="newchat-modal"
+      class="ml-2 text-1xl font-medium font-extrabold text-right bg-gray-700 rounded-3xl"
+      >New</button
+    >
+
+    <ul class="space-y-2 font-medium" id="room-list">
+      <!-- Los cuartos se agregarán aquí -->
+    </ul>
+
+    <script>
+      // Función para obtener el valor de una cookie por su nombre
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+      }
+      document.addEventListener("DOMContentLoaded", async () => {
+        // Obtén el user_id de la cookie
+        const user_id = getCookie("user_id");
+        if (!user_id) {
+          // Maneja la situación en la que el user_id no está disponible
+          console.error("user_id no disponible");
+          return;
+        }
+
+        // Usa el user_id en la URL de la API
+        const apiUrl = `http://192.168.35.16:8000/api/roomUser/getAll/${user_id}`;
+
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        const roomList = document.querySelector("#room-list"); // Encuentra el elemento HTML donde deseas agregar las habitaciones
+
+        data.forEach((room) => {
+          const room_id = parseInt(room.room_id);
+          // Crea un elemento de lista <li> para cada habitación
+          const listItem = document.createElement("li");
+          listItem.innerHTML = `
+             <a href="#"
           class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group"
           data-room-id="${room.room_id}"
         >
@@ -58,19 +86,21 @@ function getCookie(name) {
           <span class="ml-3">${room.room_name}</span>
         </a>
              `;
-       
-             // Agrega un manejador de eventos para cuando se hace clic en la habitación
-             listItem.querySelector('a').addEventListener('click', (event) => {
-               event.preventDefault();
-               const room_id = event.currentTarget.getAttribute('data-room-id');
-       
-               // Actualiza la variable global room_id
-               window.selectedRoomId = room_id;
-             });
-       
-             roomList.appendChild(listItem); // Agrega el elemento de lista a la lista de habitaciones
-           });
-         });
-       </script>
-    </div>
- </aside>
+
+          // Agrega un manejador de eventos para cuando se hace clic en la habitación
+          listItem.querySelector("a").addEventListener("click", (event) => {
+            event.preventDefault();
+            const room_id = event.currentTarget.getAttribute("data-room-id");
+
+            // Actualiza la variable global room_id
+            window.selectedRoomId = room_id;
+          });
+
+          roomList.appendChild(listItem); // Agrega el elemento de lista a la lista de habitaciones
+        });
+      });
+    </script>
+  </div>
+</aside>
+
+<CreateChatModal />
