@@ -1,10 +1,10 @@
 {
-  "name": "astro-ayudachuy",
+  "name": "chatroom",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "start": "tsc -p /home/entdev/astro-ayudaChuy/tsconfig.json && node server.js",
+    "start": "tsc -p /home/entdev/chatroom/tsconfig.json && node server.js",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
