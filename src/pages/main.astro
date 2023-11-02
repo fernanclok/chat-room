@@ -10,9 +10,8 @@ import Sidebar from "../components/sidebar.astro";
     <Header />
 
     <div class="chat-container chat-container-with-margin">
-
-      <!-- aqui se mustran los mensajes del chat -->
-      <div id="chat"></div>
+      <!-- Aquí se muestran los mensajes del chat -->
+      <div id="chat" style="overflow-y: auto; display: flex; flex-direction: column-reverse;"></div>
 
       <form
         id="messageForm"
@@ -46,167 +45,132 @@ import Sidebar from "../components/sidebar.astro";
     </div>
   </div>
 
-  <script src="http://192.168.35.16:8000/socket.io/socket.io.js" is:inline
+  <script src="https://192.168.35.16:8000/socket.io/socket.io.js" is:inline
   ></script>
 
   <script>
-    // Función para obtener el valor de una cookie por su nombre
-    function getCookie(name) {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(";").shift();
-    }
+    const getUserID = async () => {
+      // Función para obtener el valor de una cookie por su nombre
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+      }
 
-    document.addEventListener("DOMContentLoaded", async () => {
       // obtener el user_id del usuario actual
       const user_id = parseInt(getCookie("user_id"));
 
       if (!user_id) {
         console.error("user_id no disponible");
-        return;
+        return null;
       }
 
-      // Conectar al servidor de Socket.io
-      window.socket = io("http://192.168.35.16:8000"); 
+      return user_id;
+    };
 
-      window.socket.on("connect", () => {
-        console.log("Conectado al servidor de Socket.io");
-      });
-
-      window.socket.on("disconnect", () => {
-        console.log("Desconectado del servidor de Socket.io");
-      });
-
-      window.socket.on("message", (message) => {
-        console.log("Mensaje recibido:", message);
-
-        const chatContainer = document.getElementById("chat");
-        const messageElement = document.createElement("p");
-        messageElement.textContent = message.message;
-
-        if (user_id == message.user_id) {
-          messageElement.classList.add("me");
-        } else {
-          messageElement.classList.add("them");
-        }
-
-        chatContainer.appendChild(messageElement);
-        chatContainer.scrollTop = chatContainer.scrollHeight; // Desplazar hacia abajo para mostrar el último mensaje
-      });
-      // Función para cargar y mostrar mensajes según la conversación seleccionada
-      async function loadAndDisplayMessages(roomId) {
-        // Obtén el contenedor de chat
-        const chatContainer = document.getElementById("chat");
-
-        // Haz una solicitud al servidor para obtener mensajes de la conversación
-        const apiUrl = `http://192.168.35.16:8000/api/message/getAll/room/${roomId}`;
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        console.log(data);
-
-        // Limpiar el contenido actual del contenedor de chat
-        chatContainer.innerHTML = "";
-
-        // Obtén el ID del usuario actual (esto debe estar definido previamente)
-        const currentUserID = user_id; // Reemplaza 'mi_id' con el ID de tu usuario
-        console.log("usuario actual:", currentUserID);
-
-        // Itera sobre los mensajes en orden inverso (desde el más nuevo hasta el más antiguo)
-        for (let i = data.length - 1; i >= 0; i--) {
-          const message = data[i];
-
-          const messageElement = document.createElement("p");
-          messageElement.textContent = message.message;
-
-          console.log("user del message", message.user_id);
-
-          // Agrega clases CSS condicionales según el autor del mensaje
-          if (currentUserID == message.user_id) {
-            messageElement.classList.add("me"); // Mensaje del usuario actual (derecha)
-          } else {
-            messageElement.classList.add("them"); // Mensaje de otros usuarios (izquierda)
-          }
-
-          console.log(message.message);
-
-          // Agrega el mensaje al final del contenedor
-          chatContainer.appendChild(messageElement);
-        }
+    const getUsername = async () => {
+      // Función para obtener el valor de una cookie por su nombre
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
       }
 
-      // Agrega un evento de clic a los enlaces de conversación en el sidebar
-      document.addEventListener("click", (event) => {
-        if (event.target && event.target.getAttribute("data-room-id")) {
-          const roomId = event.target.getAttribute("data-room-id");
-          loadAndDisplayMessages(roomId);
+      // obtener el user_id del usuario actual
+      const username = getCookie("username");
+
+      if (!username) {
+        console.error("username no disponible");
+        return null;
+      }
+
+      return username;
+    };
+
+    // Conectar al servidor de Socket.io
+    const socket = io("https://192.168.35.16:8000", {
+      auth: {
+        user_Id: await getUserID(),
+        username: await getUsername(),
+        serverOffSet: 0,
+      },
+    });
+
+    const form = document.getElementById("messageForm");
+    const messageInput = document.getElementById("messageInput");
+    const messageContainer = document.getElementById("chat");
+
+    socket.on("chat message", (msg, serverOffSet) => {
+      console.log("Mensaje recibido en el cliente:", msg);
+
+      // Determinar si el mensaje es del usuario actual
+      const isCurrentUserMessage = msg.user_id === socket.auth.user_Id;
+      
+      // Estilos al mensaje dependiendo de si es del usuario actual o de otro usuario
+      const messageClass = isCurrentUserMessage ? "me" : "them";
+      const usernameClass = isCurrentUserMessage ? "username-me" : "username-them";
+
+      // Crear un elemento para el nombre de usuario
+      const usernameElement = document.createElement("span");
+      usernameElement.classList.add(usernameClass);
+      usernameElement.textContent = msg.username + ": ";
+
+      // Crear un elemento para el mensaje
+      const messageElement = document.createElement("p");
+      messageElement.classList.add(messageClass);
+
+      // Crear el contenido del mensaje
+      const messageContent = document.createTextNode(msg.message);
+
+      // Agregar el nombre y contenido del mensaje al chat
+      messageElement.appendChild(usernameElement);
+      messageElement.appendChild(messageContent);
+
+      // Agregar el mensaje al inicio del chat en lugar del final
+      messageContainer.insertBefore(messageElement, messageContainer.firstChild);
+
+      socket.auth.serverOffSet = serverOffSet;
+      // messageContainer.scrollTop = 0; // Mantener el chat en la parte inferior
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (messageInput.value) {
+        const message = messageInput.value;
+        const user_id = await getUserID();
+        const username = await getUsername();
+
+        // Obtener el user_id y username del usuario actual
+        if (!user_id || !username) {
+          console.error("user_id o username no disponibles");
+          return;
         }
-      });
 
-      // // Escuchar mensajes en tiempo real a través de Socket.io
-      // socket.on("message", (message) => {
-      //   const chatContainer = document.getElementById("chat");
-      //   const messageElement = document.createElement("p");
-      //   messageElement.textContent = message.message;
-      //   console.log("mensaje del socket", message.message);
+        // Crear un objeto de mensaje con los datos necesarios
+        const messageData = {
+          user_id,
+          username,
+          message,
+          timestamp: new Date().toISOString(),
+        };
 
-      //   if (user_id == message.user_id) {
-      //     messageElement.classList.add("me");
-      //   } else {
-      //     messageElement.classList.add("them");
-      //   }
+        socket.emit("chat message", messageData);
 
-      //   chatContainer.appendChild(messageElement);
-      // });
-
-      // Manejar el envío de mensajes desde el formulario
-      document
-        .getElementById("messageForm")
-        .addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const messageInput = document.getElementById("messageInput");
-          const message = messageInput.value;
-
-          // Obtén el room_id como cadena desde la variable global
-          const room_id_string = window.selectedRoomId;
-
-          // Convierte la cadena a un entero
-          const room_id = parseInt(room_id_string);
-
-          if (!room_id) {
-            console.error("room_id no disponible");
-            return;
-          }
-
-          // Crea el objeto de mensaje sin valores nulos
-          const messageData = {
-            user_id,
-            room_id,
-            message,
-            timestamp: new Date().toISOString(),
-            message_type_id: 1, // Puedes ajustar el tipo de mensaje según tu lógica
-            url: null, // Puedes proporcionar una URL si es necesario
-          };
-
-          // Enviar el mensaje al servidor a través de Socket.io
-          var emitter = socket.emit("chat message", messageData);
-          console.log("emitter", emitter);
-
-          messageInput.value = ""; // Limpia el campo de entrada
-        });
+        messageInput.value = "";
+      }
     });
   </script>
 
   <style>
-    /* Estilo base para .chat-container */
     .chat-container {
       display: flex;
       flex-direction: column;
       height: 69vh;
-      margin-left: 0; /* Inicialmente, sin margen izquierdo */
-      transition: margin-left 0.3s ease; /* Agrega una transición suave para el margen izquierdo */
+      margin-left: 0;
+      transition: margin-left 0.3s ease;
     }
 
-    /* Aplica el margen izquierdo solo cuando el sidebar esté abierto */
     .chat-container.chat-container-with-margin {
       margin-left: 250px;
     }
@@ -217,7 +181,7 @@ import Sidebar from "../components/sidebar.astro";
       flex-direction: column-reverse;
       overflow-y: auto;
       height: 85vh;
-      width: 100%;
+      scroll-behavior: smooth;
     }
 
     #messageForm {
@@ -232,29 +196,27 @@ import Sidebar from "../components/sidebar.astro";
       border-radius: 5px;
     }
 
-    /* Estilo para mensajes del usuario actual (derecha) */
-    #chat .me {
+    .me {
       margin-left: auto;
       background-color: #4861d1;
       color: #ffffff;
-      text-align: right; /* Alinea el texto a la derecha */
+      text-align: right;
     }
 
-    /* Estilo para mensajes de otros usuarios (izquierda) */
-    #chat .them {
+    .them {
       margin-right: auto;
       background-color: #67acec;
       color: #ffffff;
-      text-align: left; /* Alinea el texto a la izquierda */
+      text-align: left;
     }
 
-    #chat .username-me {
-      margin-left: auto;
+    .username-me {
+      margin-right: auto;
       color: #ffffff;
       font-weight: bold;
     }
 
-    #chat .username-them {
+    .username-them {
       margin-right: auto;
       color: #ffffff;
       font-weight: bold;

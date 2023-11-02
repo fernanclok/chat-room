@@ -50,11 +50,19 @@ const { title } = Astro.props;
 			monospace;
 	}
 
-	.chat-container {
-  display: flex;
-  flex-direction: column;
-  height: 69vh;
-}
+    /* Estilo base para .chat-container */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 69vh;
+      margin-left: 0; /* Inicialmente, sin margen izquierdo */
+      transition: margin-left 0.3s ease; /* Agrega una transición suave para el margen izquierdo */
+    }
+
+    /* Aplica el margen izquierdo solo cuando el sidebar esté abierto */
+    .chat-container.chat-container-with-margin {
+      margin-left: 250px;
+    }
 
 #chat {
   flex-grow: 1;
@@ -70,10 +78,12 @@ const { title } = Astro.props;
 }
 
 #chat p {
-  width: 70%;
+  width: auto;
   margin: 10px;
   padding: 5px;
-  border-radius: 5px;
+  border-radius: 20px;
+  max-width: 70%;
+  word-wrap: break-word;
 }
 
   /* Estilo para mensajes del usuario actual (derecha) */
@@ -91,6 +101,20 @@ const { title } = Astro.props;
     color: #ffffff;
     text-align: left; /* Alinea el texto a la izquierda */
   }
+
+  .username-me {
+      margin-left: auto;
+      color: #ffffff;
+      display: block;
+      font-weight: bold;
+    }
+
+    .username-them {
+      margin-right: auto;
+      color: #ffffff;
+      display: block;
+      font-weight: bold;
+    }
 
   .form-full-width {
   width: 100%;
